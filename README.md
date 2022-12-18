@@ -1,189 +1,110 @@
 # Hand-Controlled-bot
-#include <AFMotor.h>  
-#include <NewPing.h>
-#include <Servo.h> 
- 
-#define TRIG_PIN A0 
+#include<NewPing.h>
+#include<Servo.h>
+#include<AFMotor.h>
+#define RIGHT A2
+#define LEFT A3
+#define TRIGGER_PIN A0
 #define ECHO_PIN A1
-#define MAX_DISTANCE 100 
-#define MAX_SPEED 150 // sets speed of DC  motors
-#define MAX_SPEED_OFFSET 20
- 
- 
-NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE); 
- 
-AF_DCMotor motor1(1, MOTOR12_64KHZ); 
-AF_DCMotor motor2(2, MOTOR12_64KHZ);
-AF_DCMotor motor3(3, MOTOR34_64KHZ);
-AF_DCMotor motor4(4, MOTOR34_64KHZ);
-Servo myservo;   
- 
-boolean goesForward=false;
-int distance = 100;
-int speedSet = 0;
- 
-void setup() {
-
- Serial.begin(9600);
-
- 
-  myservo.attach(10);  
-  myservo.write(115); 
-  delay(2000);
-  distance = readPing();
-  delay(100);
-  distance = readPing();
-  delay(100);
-  distance = readPing();
-  delay(100);
-  distance = readPing();
-  delay(100);
-}
- 
-void loop() {
- int distanceR = 0;
- int distanceL = 0;
- delay(40);
- 
- if(distance<=25)
- {
-  Serial.print("distance= ");
-  Serial.print(distance);
+#define MAX_DISTANCE 100
   
-  moveStop();
-  delay(100);
-  moveBackward();
-  delay(200);
-  moveStop();
-  delay(200);
-  distanceR = lookRight();
-  delay(200);
-  distanceL = lookLeft();
-  delay(200);
- 
-  if(distanceR>=distanceL)
-  {
-    turnRight();
-    moveStop();
-     Serial.print("Move Right");
-  } 
- 
-  else
- 
-  {
-    turnLeft();
-    moveStop();
 
-    Serial.print("Move Left");
-  }
- } 
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+
+
+AF_DCMotor Motor1(1,MOTOR12_1KHZ);
+AF_DCMotor Motor2(2,MOTOR12_1KHZ);
+AF_DCMotor Motor3(3,MOTOR34_1KHZ);
+AF_DCMotor Motor4(4,MOTOR34_1KHZ);
+
+Servo myservo;
  
- else
- {
-  moveForward();
+int pos =0;
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+myservo.attach(10);
+{
+for(pos = 90; pos <= 180; pos += 1){
+  myservo.write(pos);
+  delay(15);
+} for(pos = 180; pos >= 0; pos-= 1) {
+  myservo.write(pos);
+  delay(15);
+}for(pos = 0; pos<=90; pos += 1) {
+  myservo.write(pos);
+  delay(15);
+}
+}
+pinMode(RIGHT, INPUT);
+pinMode(LEFT, INPUT);
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  delay(50);
+ unsigned int distance = sonar.ping_cm();
+Serial.print("distance");
+Serial.println(distance);
+
+
+int Right_Value = digitalRead(RIGHT);
+int Left_Value = digitalRead(LEFT);
+
+Serial.print("RIGHT");
+Serial.println(Right_Value);
+Serial.print("LEFT");
+Serial.println(Left_Value);
+Serial.print(distance);
+
+
+if((Right_Value==1) && (distance>=10 && distance<=30)&&(Left_Value==1)){
+  Motor1.setSpeed(80);
+  Motor1.run(FORWARD);
+  Motor2.setSpeed(80);
+  Motor2.run(FORWARD);
+  Motor3.setSpeed(80);
+  Motor3.run(FORWARD);
+  Motor4.setSpeed(80);
+  Motor4.run(FORWARD);
+}else if((Right_Value==0) && (Left_Value==1)) {
+  Motor1.setSpeed(200);
+  Motor1.run(FORWARD);
+  Motor2.setSpeed(200);
+  Motor2.run(FORWARD);
+  Motor3.setSpeed(100);
+  Motor3.run(BACKWARD);
+  Motor4.setSpeed(100);
+  Motor4.run(BACKWARD);
+}else if((Right_Value==1)&&(Left_Value==0)) {
+  Motor1.setSpeed(100);
+  Motor1.run(BACKWARD);
+  Motor2.setSpeed(100);
+  Motor2.run(BACKWARD);
+  Motor3.setSpeed(200);
+  Motor3.run(FORWARD);
+  Motor4.setSpeed(200);
+  Motor4.run(FORWARD);
+}else if((Right_Value==1)&&(Left_Value==1)) {
+  Motor1.setSpeed(0);
+  Motor1.run(RELEASE);
+  Motor2.setSpeed(0);
+  Motor2.run(RELEASE);
+  Motor3.setSpeed(0);
+  Motor3.run(RELEASE);
+  Motor4.setSpeed(0);
+  Motor4.run(RELEASE);
+}else if(distance > 1 && distance < 10) {
+  Motor1.setSpeed(0);
+  Motor1.run(RELEASE);
+  Motor2.setSpeed(0);
+  Motor2.run(RELEASE);
+  Motor3.setSpeed(0);
+  Motor3.run(RELEASE);
+  Motor4.setSpeed(0);
+  Motor4.run(RELEASE);
+  }
  }
- distance = readPing();
-}
- 
-int lookRight()
-{
-    myservo.write(50); 
-    delay(500);
-    int distance = readPing();
-    delay(100);
-    myservo.write(115); 
-    return distance;
-}
- 
-int lookLeft()
-{
-    myservo.write(170); 
-    delay(500);
-    int distance = readPing();
-    delay(100);
-    myservo.write(115); 
-    return distance;
-    delay(100);
-}
- 
-int readPing() { 
-  delay(100);
-  int cm = sonar.ping_cm();
-  if(cm==0)
-  {
-    cm = 250;
-  }
-  return cm;
-}
- 
-void moveStop() {
-  motor1.run(RELEASE); 
-  motor2.run(RELEASE);
-  motor3.run(RELEASE);
-  motor4.run(RELEASE);
-  } 
- 
-void moveForward() {
- 
- if(!goesForward)
-  {
-    goesForward=true;
-    motor1.run(FORWARD);      
-    motor2.run(FORWARD);
-    motor3.run(FORWARD); 
-    motor4.run(FORWARD); 
-     Serial.print("Move Forward");
-    
-   for (speedSet = 0; speedSet < MAX_SPEED; speedSet +=2) // slowly bring the speed up to avoid loading down the batteries too quickly
-   {
-    motor1.setSpeed(speedSet);
-    motor2.setSpeed(speedSet);
-    motor3.setSpeed(speedSet);
-    motor4.setSpeed(speedSet);
-    delay(5);
-    Serial.print(speedSet);
-   }
-  }
-}
- 
-void moveBackward() {
-    goesForward=false;
-    motor1.run(BACKWARD);      
-    motor2.run(BACKWARD);
-    motor3.run(BACKWARD);
-    motor4.run(BACKWARD);  
-      Serial.print("Move Backward");
-  for (speedSet = 0; speedSet < MAX_SPEED; speedSet +=2) // slowly bring the speed up to avoid loading down the batteries too quickly
-  {
-    motor1.setSpeed(speedSet);
-    motor2.setSpeed(speedSet);
-    motor3.setSpeed(speedSet);
-    motor4.setSpeed(speedSet);
-    delay(5);
-      Serial.print(speedSet);
-  }
-}  
- 
-void turnRight() {
-  motor1.run(FORWARD);
-  motor2.run(FORWARD);
-  motor3.run(BACKWARD);
-  motor4.run(BACKWARD);     
-  delay(500);
-  motor1.run(FORWARD);      
-  motor2.run(FORWARD);
-  motor3.run(FORWARD);
-  motor4.run(FORWARD);      
-} 
- 
-void turnLeft() {
-  motor1.run(BACKWARD);     
-  motor2.run(BACKWARD);  
-  motor3.run(FORWARD);
-  motor4.run(FORWARD);   
-  delay(500);
-  motor1.run(FORWARD);     
-  motor2.run(FORWARD);
-  motor3.run(FORWARD);
-  motor4.run(FORWARD);
-}
